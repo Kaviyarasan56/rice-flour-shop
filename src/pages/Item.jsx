@@ -9,7 +9,6 @@ function RotatingPocket() {
 
   useFrame(() => {
     if (ref.current) {
-      // Billboard-like behavior: always face camera with gentle sway
       ref.current.rotation.y = Math.sin(performance.now() / 1200) * 0.15;
       ref.current.rotation.x = 0.05;
     }
@@ -17,7 +16,6 @@ function RotatingPocket() {
 
   return (
     <mesh ref={ref} scale={[1.6, 1.6, 1]}>
-      {/* increased scale to fill container */}
       <planeGeometry args={[2.2, 2.2]} />
       <meshBasicMaterial map={texture} transparent />
     </mesh>
@@ -25,12 +23,11 @@ function RotatingPocket() {
 }
 
 export default function ItemTamil() {
-  const [date, setDate] = useState(null); // 'today' or 'tomorrow'
-  const [slot, setSlot] = useState(null); // 'morning' or 'evening'
+  const [date, setDate] = useState(null);
+  const [slot, setSlot] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [instructions, setInstructions] = useState("");
   const [currentHour, setCurrentHour] = useState(new Date().getHours());
-  const [orderId, setOrderId] = useState(null);
   const [showInstructions, setShowInstructions] = useState(false);
   const [confirmationMessage, setConfirmationMessage] = useState("");
 
@@ -46,23 +43,20 @@ export default function ItemTamil() {
     }
     const payload = { quantity, instructions, date, slot };
     try {
-      const res = await fetch("https://rice-flour-backend-production.up.railway.app/api/orders", {
+      await fetch("https://rice-flour-backend-production.up.railway.app/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = await res.json();
-      setOrderId(data.id);
-      setConfirmationMessage(
-        `✅ உங்கள் ஆர்டர் வெற்றிகரமாகப் பதிவாகியுள்ளது. ஆர்டர் எண்: ${data.id}. அளவு: ${quantity}. தேதி: ${date === "today" ? "இன்று" : "நாளை"}. நேரம்: ${slot === "morning" ? "காலை" : "மாலை"}.`
-      );
+
+      setConfirmationMessage("✅ உங்கள் ஆர்டர் வெற்றிகரமாகப் பதிவாகியுள்ளது.");
       try { window.navigator.vibrate && window.navigator.vibrate(35); } catch(_) {}
-      try {
-        const url = `/confirmation/${data.id}`;
-        if (window && window.location) {
-          setTimeout(() => (window.location.href = url), 600);
-        }
-      } catch (_) {}
+
+      // Redirect to static confirmation page
+      setTimeout(() => {
+        window.location.href = "/confirmation";
+      }, 600);
+
     } catch (err) {
       console.error(err);
       setConfirmationMessage("⚠️ ஏதோ தவறு ஏற்பட்டது. தயவுசெய்து மீண்டும் முயற்சிக்கவும்.");
@@ -76,40 +70,30 @@ export default function ItemTamil() {
     <div className="container item-page">
       <h2>🍚 அரிசி மாவு ஆர்டர்</h2>
 
-      {/* Date Buttons */}
       <div className="date-buttons btn-group">
         <button
           className={date === "today" ? "active" : ""}
           disabled={currentHour >= 17}
           onClick={() => { setDate("today"); setSlot(null); setConfirmationMessage(""); }}
-        >
-          இன்று
-        </button>
+        >இன்று</button>
         <button
           className={date === "tomorrow" ? "active" : ""}
           onClick={() => { setDate("tomorrow"); setSlot(null); setConfirmationMessage(""); }}
-        >
-          நாளை
-        </button>
+        >நாளை</button>
       </div>
 
-      {/* Slot Buttons */}
       {date && (
         <div className="slot-buttons btn-group">
           <button
             className={slot === "morning" ? "active" : ""}
             disabled={isMorningDisabled}
             onClick={() => setSlot("morning")}
-          >
-            காலை
-          </button>
+          >காலை</button>
           <button
             className={slot === "evening" ? "active" : ""}
             disabled={isEveningDisabled}
             onClick={() => setSlot("evening")}
-          >
-            மாலை
-          </button>
+          >மாலை</button>
         </div>
       )}
 
@@ -120,7 +104,6 @@ export default function ItemTamil() {
         </div>
       )}
 
-      {/* 3D Model */}
       <div className="pocket-glow model-block">
         <Canvas style={{ height: 240 }}>
           <ambientLight intensity={0.6} />
@@ -132,16 +115,14 @@ export default function ItemTamil() {
         </Canvas>
       </div>
 
-      {/* Quantity Selector */}
       <div className="quantity-selector">
-        <button aria-label="குறை" onClick={() => setQuantity(q => Math.max(1, q - 1))}>-</button>
+        <button onClick={() => setQuantity(q => Math.max(1, q - 1))}>-</button>
         <span className="qty-value">{quantity}</span>
-        <button aria-label="அதிகரி" onClick={() => setQuantity(q => q + 1)}>+</button>
+        <button onClick={() => setQuantity(q => q + 1)}>+</button>
       </div>
 
-      {/* Instructions */}
       <div className="instructions">
-        <button type="button" className="instructions-btn" onClick={() => setShowInstructions(v => !v)}>
+        <button onClick={() => setShowInstructions(v => !v)}>
           {showInstructions ? "குறிப்பை மறை" : "குறிப்பு சேர்க்க"}
         </button>
         {showInstructions && (
@@ -154,7 +135,6 @@ export default function ItemTamil() {
         )}
       </div>
 
-      {/* Confirm */}
       <button className="confirm-btn" onClick={handleConfirm}>உறுதிசெய்</button>
 
       {confirmationMessage && (
