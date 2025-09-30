@@ -23,15 +23,12 @@ function RotatingPocket() {
 }
 
 export default function ItemTamil() {
-  const [date, setDate] = useState(null); // 'today' or 'tomorrow'
-  const [slot, setSlot] = useState(null); // 'morning' or 'evening'
+  const [date, setDate] = useState(null);
+  const [slot, setSlot] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [instructions, setInstructions] = useState("");
   const [currentHour, setCurrentHour] = useState(new Date().getHours());
   const [orderPlaced, setOrderPlaced] = useState(false);
-  const [orderId, setOrderId] = useState(null);
-
-  const [showInstructions, setShowInstructions] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentHour(new Date().getHours()), 60000);
@@ -45,7 +42,6 @@ export default function ItemTamil() {
     }
 
     const payload = { quantity, instructions, date, slot };
-
     try {
       const res = await fetch(
         "https://rice-flour-backend-production.up.railway.app/api/orders",
@@ -55,11 +51,13 @@ export default function ItemTamil() {
           body: JSON.stringify(payload),
         }
       );
-      const data = await res.json();
-      setOrderId(data.id);
+      await res.json();
       setOrderPlaced(true);
 
-      try { window.navigator.vibrate && window.navigator.vibrate(35); } catch (_) {}
+      // Redirect after 3 seconds
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 3000);
     } catch (err) {
       console.error(err);
       alert("⚠️ ஏதோ தவறு ஏற்பட்டது. தயவுசெய்து மீண்டும் முயற்சிக்கவும்.");
@@ -69,18 +67,29 @@ export default function ItemTamil() {
   const isMorningDisabled = date === "today" ? currentHour >= 10 : false;
   const isEveningDisabled = date === "today" ? currentHour >= 17 : false;
 
-  // --- Confirmation Screen ---
+  // --- Full-screen success message ---
   if (orderPlaced) {
     return (
-      <div className="confirm-container">
-        <h1>🎉 நன்றி! உங்கள் ஆர்டர் வெற்றியாக பதிவாகியது!</h1>
-        <p>ஆர்டர் எண்: <strong>{orderId}</strong></p>
-        <p>அளவு: {quantity}</p>
-        <p>தேதி: {date === "today" ? "இன்று" : "நாளை"}</p>
-        <p>நேரம்: {slot === "morning" ? "காலை" : "மாலை"}</p>
-        <button className="primary-btn" onClick={() => window.location.reload()}>
-          மேலும் ஆர்டர் செய்ய
-        </button>
+      <div style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100vw",
+        height: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#fffbe6",
+        flexDirection: "column",
+        zIndex: 9999,
+        textAlign: "center",
+        fontSize: "2.5rem",
+        color: "#27ae60",
+      }}>
+        🎉 உங்கள் ஆர்டர் வெற்றியாக பதிவாகியது! 🎉
+        <p style={{ fontSize: "1.5rem", marginTop: "20px" }}>
+          நீங்கள் இப்போது முதன்மை பக்கத்துக்கு மாற்றப்படுவீர்கள்...
+        </p>
       </div>
     );
   }
@@ -127,13 +136,6 @@ export default function ItemTamil() {
         </div>
       )}
 
-      {(date || slot) && (
-        <div className="selection-chips">
-          {date && <span className="chip">{date === "today" ? "இன்று" : "நாளை"}</span>}
-          {slot && <span className="chip">{slot === "morning" ? "காலை" : "மாலை"}</span>}
-        </div>
-      )}
-
       {/* 3D Model */}
       <div className="pocket-glow model-block">
         <Canvas style={{ height: 240 }}>
@@ -155,17 +157,15 @@ export default function ItemTamil() {
 
       {/* Instructions */}
       <div className="instructions">
-        <button type="button" className="instructions-btn" onClick={() => setShowInstructions(v => !v)}>
-          {showInstructions ? "குறிப்பை மறை" : "குறிப்பு சேர்க்க"}
+        <button type="button" className="instructions-btn" onClick={() => setInstructions(v => !v)}>
+          குறிப்பு சேர்க்க
         </button>
-        {showInstructions && (
-          <textarea
-            placeholder="குறிப்பு (விருப்பம்)"
-            value={instructions}
-            onChange={e => setInstructions(e.target.value)}
-            rows={3}
-          />
-        )}
+        <textarea
+          placeholder="குறிப்பு (விருப்பம்)"
+          value={instructions}
+          onChange={e => setInstructions(e.target.value)}
+          rows={3}
+        />
       </div>
 
       {/* Confirm */}
