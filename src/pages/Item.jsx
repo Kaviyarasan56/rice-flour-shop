@@ -1,4 +1,5 @@
 import React, { useState, useEffect, Suspense } from "react";
+import { useNavigate } from "react-router-dom";
 import "../styles/item.css";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, useTexture } from "@react-three/drei";
@@ -23,6 +24,7 @@ function RotatingPocket() {
 }
 
 export default function ItemTamil() {
+  const navigate = useNavigate();
   const [date, setDate] = useState(null);
   const [slot, setSlot] = useState(null);
   const [quantity, setQuantity] = useState(1);
@@ -41,7 +43,9 @@ export default function ItemTamil() {
       setConfirmationMessage("தேதி மற்றும் நேரத்தைத் தேர்ந்தெடுக்கவும்.");
       return;
     }
+
     const payload = { quantity, instructions, date, slot };
+
     try {
       await fetch("https://rice-flour-backend-production.up.railway.app/api/orders", {
         method: "POST",
@@ -52,10 +56,8 @@ export default function ItemTamil() {
       setConfirmationMessage("✅ உங்கள் ஆர்டர் வெற்றிகரமாகப் பதிவாகியுள்ளது.");
       try { window.navigator.vibrate && window.navigator.vibrate(35); } catch(_) {}
 
-      // Redirect to static confirmation page
-      setTimeout(() => {
-        window.location.href = "/confirmation";
-      }, 600);
+      // ✅ Use React Router to navigate instead of window.location.href
+      setTimeout(() => navigate("/confirmation"), 600);
 
     } catch (err) {
       console.error(err);
