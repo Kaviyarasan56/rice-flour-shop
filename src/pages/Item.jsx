@@ -1,5 +1,4 @@
 import React, { useState, useEffect, Suspense } from "react";
-import { useNavigate } from "react-router-dom";
 import "../styles/item.css";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, useTexture } from "@react-three/drei";
@@ -24,14 +23,15 @@ function RotatingPocket() {
 }
 
 export default function ItemTamil() {
-  const navigate = useNavigate();
-  const [date, setDate] = useState(null);
-  const [slot, setSlot] = useState(null);
+  const [date, setDate] = useState(null); // 'today' or 'tomorrow'
+  const [slot, setSlot] = useState(null); // 'morning' or 'evening'
   const [quantity, setQuantity] = useState(1);
   const [instructions, setInstructions] = useState("");
   const [currentHour, setCurrentHour] = useState(new Date().getHours());
+  const [orderPlaced, setOrderPlaced] = useState(false);
+  const [orderId, setOrderId] = useState(null);
+
   const [showInstructions, setShowInstructions] = useState(false);
-  const [confirmationMessage, setConfirmationMessage] = useState("");
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentHour(new Date().getHours()), 60000);
@@ -40,62 +40,90 @@ export default function ItemTamil() {
 
   const handleConfirm = async () => {
     if (!date || !slot) {
-      setConfirmationMessage("தேதி மற்றும் நேரத்தைத் தேர்ந்தெடுக்கவும்.");
+      alert("தேதி மற்றும் நேரத்தைத் தேர்ந்தெடுக்கவும்.");
       return;
     }
 
     const payload = { quantity, instructions, date, slot };
 
     try {
-      await fetch("https://rice-flour-backend-production.up.railway.app/api/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const res = await fetch(
+        "https://rice-flour-backend-production.up.railway.app/api/orders",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
+      const data = await res.json();
+      setOrderId(data.id);
+      setOrderPlaced(true);
 
-      setConfirmationMessage("✅ உங்கள் ஆர்டர் வெற்றிகரமாகப் பதிவாகியுள்ளது.");
-      try { window.navigator.vibrate && window.navigator.vibrate(35); } catch(_) {}
-
-      // ✅ Use React Router to navigate instead of window.location.href
-      setTimeout(() => navigate("/confirmation"), 600);
-
+      try { window.navigator.vibrate && window.navigator.vibrate(35); } catch (_) {}
     } catch (err) {
       console.error(err);
-      setConfirmationMessage("⚠️ ஏதோ தவறு ஏற்பட்டது. தயவுசெய்து மீண்டும் முயற்சிக்கவும்.");
+      alert("⚠️ ஏதோ தவறு ஏற்பட்டது. தயவுசெய்து மீண்டும் முயற்சிக்கவும்.");
     }
   };
 
   const isMorningDisabled = date === "today" ? currentHour >= 10 : false;
   const isEveningDisabled = date === "today" ? currentHour >= 17 : false;
 
+  // --- Confirmation Screen ---
+  if (orderPlaced) {
+    return (
+      <div className="confirm-container">
+        <h1>🎉 நன்றி! உங்கள் ஆர்டர் வெற்றியாக பதிவாகியது!</h1>
+        <p>ஆர்டர் எண்: <strong>{orderId}</strong></p>
+        <p>அளவு: {quantity}</p>
+        <p>தேதி: {date === "today" ? "இன்று" : "நாளை"}</p>
+        <p>நேரம்: {slot === "morning" ? "காலை" : "மாலை"}</p>
+        <button className="primary-btn" onClick={() => window.location.reload()}>
+          மேலும் ஆர்டர் செய்ய
+        </button>
+      </div>
+    );
+  }
+
+  // --- Order Form ---
   return (
     <div className="container item-page">
       <h2>🍚 அரிசி மாவு ஆர்டர்</h2>
 
+      {/* Date Buttons */}
       <div className="date-buttons btn-group">
         <button
           className={date === "today" ? "active" : ""}
           disabled={currentHour >= 17}
-          onClick={() => { setDate("today"); setSlot(null); setConfirmationMessage(""); }}
-        >இன்று</button>
+          onClick={() => { setDate("today"); setSlot(null); }}
+        >
+          இன்று
+        </button>
         <button
           className={date === "tomorrow" ? "active" : ""}
-          onClick={() => { setDate("tomorrow"); setSlot(null); setConfirmationMessage(""); }}
-        >நாளை</button>
+          onClick={() => { setDate("tomorrow"); setSlot(null); }}
+        >
+          நாளை
+        </button>
       </div>
 
+      {/* Slot Buttons */}
       {date && (
         <div className="slot-buttons btn-group">
           <button
             className={slot === "morning" ? "active" : ""}
             disabled={isMorningDisabled}
             onClick={() => setSlot("morning")}
-          >காலை</button>
+          >
+            காலை
+          </button>
           <button
             className={slot === "evening" ? "active" : ""}
             disabled={isEveningDisabled}
             onClick={() => setSlot("evening")}
-          >மாலை</button>
+          >
+            மாலை
+          </button>
         </div>
       )}
 
@@ -106,6 +134,7 @@ export default function ItemTamil() {
         </div>
       )}
 
+      {/* 3D Model */}
       <div className="pocket-glow model-block">
         <Canvas style={{ height: 240 }}>
           <ambientLight intensity={0.6} />
@@ -117,14 +146,16 @@ export default function ItemTamil() {
         </Canvas>
       </div>
 
+      {/* Quantity Selector */}
       <div className="quantity-selector">
-        <button onClick={() => setQuantity(q => Math.max(1, q - 1))}>-</button>
+        <button aria-label="குறை" onClick={() => setQuantity(q => Math.max(1, q - 1))}>-</button>
         <span className="qty-value">{quantity}</span>
-        <button onClick={() => setQuantity(q => q + 1)}>+</button>
+        <button aria-label="அதிகரி" onClick={() => setQuantity(q => q + 1)}>+</button>
       </div>
 
+      {/* Instructions */}
       <div className="instructions">
-        <button onClick={() => setShowInstructions(v => !v)}>
+        <button type="button" className="instructions-btn" onClick={() => setShowInstructions(v => !v)}>
           {showInstructions ? "குறிப்பை மறை" : "குறிப்பு சேர்க்க"}
         </button>
         {showInstructions && (
@@ -137,11 +168,8 @@ export default function ItemTamil() {
         )}
       </div>
 
+      {/* Confirm */}
       <button className="confirm-btn" onClick={handleConfirm}>உறுதிசெய்</button>
-
-      {confirmationMessage && (
-        <p className="confirmation-msg" role="status">{confirmationMessage}</p>
-      )}
     </div>
   );
 }
