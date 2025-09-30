@@ -1,5 +1,5 @@
 import React from "react";
-import { HashRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import Item from "./pages/Item";
 import Confirmation from "./pages/Confirmation";
@@ -10,7 +10,8 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/item" element={<Item />} />
-        <Route path="/confirmation/:id" element={<Confirmation />} />
+        {/* Static confirmation page */}
+        <Route path="/confirmation" element={<Confirmation />} />
       </Routes>
     </Router>
   );
