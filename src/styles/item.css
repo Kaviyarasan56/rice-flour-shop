@@ -1,0 +1,178 @@
+/* ---------------- Item Page ---------------- */
+.item-page {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    font-family: "Segoe UI", sans-serif;
+    background: #f3faff;
+    border-radius: 24px;
+  }
+  
+  .item-page h2 {
+    text-align: center;
+    font-size: 22px;
+    color: #0072ff;
+    font-weight: 900;
+    margin-top: 0;
+  }
+  
+  /* Buttons */
+  .btn-group {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+  }
+  
+  .btn-group button {
+    flex: 1;
+    padding: 10px 0;
+    border-radius: 16px;
+    font-weight: 800;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    background: #d0e8ff;
+    color: #0d3b66;
+  }
+  
+  .btn-group button.active {
+    background: linear-gradient(135deg,#0072ff,#00c6ff);
+    color: #fff;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+  }
+  
+  .btn-group button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .selection-chips {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  
+  .selection-chips .chip {
+    font-size: 12px;
+    padding: 6px 10px;
+    background: #e0f0ff;
+    color: #0072ff;
+    border-radius: 999px;
+    font-weight: 700;
+    border: 1px solid #c0e0ff;
+  }
+  
+  /* Model Block */
+  .model-block {
+    width: 100%;
+    height: 240px; /* existing height */
+    position: relative;
+    background: transparent; /* invisible container */
+    border-radius: 24px;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .model-block canvas {
+    width: 100% !important;
+    height: 100% !important;
+  }
+  
+  
+  /* Quantity */
+  .quantity-selector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+  }
+  
+  .quantity-selector button {
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+    border-radius: 12px;
+    border: none;
+    background: linear-gradient(135deg,#0072ff,#00c6ff);
+    color: #fff;
+    cursor: pointer;
+    font-weight: 800;
+  }
+  
+  .qty-value {
+    min-width: 36px;
+    text-align: center;
+    font-weight: 800;
+    font-size: 16px;
+  }
+  
+  /* Instructions */
+  .instructions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .instructions textarea {
+    width: 100%;
+    padding: 10px;
+    border-radius: 16px;
+    border: 1px solid #c0e0ff;
+    background: #e6f4ff;
+  }
+  
+  .instructions-btn {
+    background: linear-gradient(135deg,#00c6ff,#0072ff);
+    color: #fff;
+    border: none;
+    padding: 10px;
+    border-radius: 16px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  
+  /* Confirm Button */
+  .confirm-btn {
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
+    background: linear-gradient(135deg,#0072ff,#00c6ff);
+    color: #fff;
+    border: none;
+    border-radius: 24px;
+    font-weight: 900;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  
+  .confirm-btn:hover {
+    transform: scale(1.03);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+  }
+  
+  /* Confirmation Message */
+  .confirmation-msg {
+    margin-top: 12px;
+    text-align: center;
+    background: #e0f4ff;
+    border: 1px solid #c0e0ff;
+    color: #0072ff;
+    padding: 12px;
+    border-radius: 16px;
+    font-weight: 800;
+    font-size: 14px;
+  }
+  
+  /* Mobile */
+  @media(max-width:480px){
+    .model-block { height: 320px; }
+    .btn-group button { font-size: 13px; padding: 8px 0; }
+    .quantity-selector button { width: 40px; height: 40px; font-size: 18px; }
+  }
+  

@@ -1,0 +1,121 @@
+/* -------------------- Confirmation Page -------------------- */
+.confirm-container {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    min-height: 100vh;
+    background: linear-gradient(to bottom, #ffffff, #e0f7ff);
+    position: relative;
+    font-family: "Segoe UI", sans-serif;
+  }
+  
+  .confirm-block {
+    background: rgba(255,255,255,0.85);
+    padding: 16px;
+    border-radius: 24px;
+    text-align: center;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+  }
+  
+  .confirm-block h1 {
+    font-size: 22px;
+    font-weight: 900;
+    background: linear-gradient(45deg,#0072ff,#00c6ff);
+    -webkit-background-clip: text;
+    color: transparent;
+    margin-bottom: 8px;
+  }
+  
+  .order-info {
+    font-size: 16px;
+    font-weight: 800;
+    color: #0072ff;
+    margin-top: 4px;
+  }
+  
+  /* Fun message */
+  .confirm-block p {
+    font-size: 14px;
+    color: #174d89;
+    margin: 6px 0;
+    font-weight: 700;
+  }
+  
+  /* Buttons */
+  .buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .primary-btn, .secondary-btn {
+    flex: 1 1 45%;
+    padding: 12px;
+    border-radius: 24px;
+    font-weight: 800;
+    font-size: 14px;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+  
+  .primary-btn {
+    background: linear-gradient(135deg,#0072ff,#00c6ff);
+    color: #fff;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+  }
+  
+  .primary-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.25);
+  }
+  
+  .secondary-btn {
+    background: linear-gradient(135deg,#ffd700,#ff7f50);
+    color: #222;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+  }
+  
+  .secondary-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.25);
+  }
+  
+  /* Confetti Animation */
+  .confetti {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  
+  .confetti span {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    width: 8px;
+    height: 12px;
+    background: hsl(var(--h, 30) 90% 60%);
+    transform: translateX(calc(-50% + var(--x,0px)));
+    animation: drop 2.5s ease-in forwards;
+  }
+  
+  .confetti span:nth-child(odd) { --h: 20; }
+  .confetti span:nth-child(even) { --h: 45; }
+  .confetti span { --x: calc((var(--i,1) - 25) * 8px); }
+  
+  @keyframes drop {
+    0% { transform: translateY(-20px) translateX(0) rotate(0); opacity: 0; }
+    20% { opacity: 1; }
+    100% { transform: translateY(520px) translateX(var(--x)) rotate(360deg); opacity: 0; }
+  }
+  
+  /* Mobile */
+  @media(max-width:480px){
+    .confirm-block h1{font-size:20px;}
+    .primary-btn,.secondary-btn{flex:1 1 48%;}
+  }
+  
