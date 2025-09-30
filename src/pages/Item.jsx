@@ -27,74 +27,41 @@ export default function ItemTamil() {
   const [slot, setSlot] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [instructions, setInstructions] = useState("");
+  const [showSuccess, setShowSuccess] = useState(false);
   const [currentHour, setCurrentHour] = useState(new Date().getHours());
-  const [orderPlaced, setOrderPlaced] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentHour(new Date().getHours()), 60000);
     return () => clearInterval(timer);
   }, []);
 
-  const handleConfirm = async () => {
+  const handleConfirm = () => {
     if (!date || !slot) {
       alert("தேதி மற்றும் நேரத்தைத் தேர்ந்தெடுக்கவும்.");
       return;
     }
 
-    const payload = { quantity, instructions, date, slot };
-    try {
-      const res = await fetch(
-        "https://rice-flour-backend-production.up.railway.app/api/orders",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
-      await res.json();
-      setOrderPlaced(true);
+    // Show full-screen success overlay
+    setShowSuccess(true);
 
-      // Redirect after 3 seconds
-      setTimeout(() => {
-        window.location.href = "/";
-      }, 3000);
-    } catch (err) {
-      console.error(err);
-      alert("⚠️ ஏதோ தவறு ஏற்பட்டது. தயவுசெய்து மீண்டும் முயற்சிக்கவும்.");
-    }
+    // Redirect to home after 5 seconds
+    setTimeout(() => {
+      window.location.href = "/";
+    }, 5000);
   };
 
-  const isMorningDisabled = date === "today" ? currentHour >= 10 : false;
-  const isEveningDisabled = date === "today" ? currentHour >= 17 : false;
-
-  // --- Full-screen success message ---
-  if (orderPlaced) {
+  if (showSuccess) {
     return (
-      <div style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100vw",
-        height: "100vh",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "#fffbe6",
-        flexDirection: "column",
-        zIndex: 9999,
-        textAlign: "center",
-        fontSize: "2.5rem",
-        color: "#27ae60",
-      }}>
-        🎉 உங்கள் ஆர்டர் வெற்றியாக பதிவாகியது! 🎉
-        <p style={{ fontSize: "1.5rem", marginTop: "20px" }}>
-          நீங்கள் இப்போது முதன்மை பக்கத்துக்கு மாற்றப்படுவீர்கள்...
-        </p>
+      <div className="full-screen-success">
+        <h1>✅ உங்கள் ஆர்டர் வெற்றிகரமாகப் பதிவாகியது!</h1>
+        <p>5 விநாடிகளுக்கு பின்னர் முதன்மை பக்கத்துக்கு திரும்புகிறீர்கள்...</p>
       </div>
     );
   }
 
-  // --- Order Form ---
+  const isMorningDisabled = date === "today" ? currentHour >= 10 : false;
+  const isEveningDisabled = date === "today" ? currentHour >= 17 : false;
+
   return (
     <div className="container item-page">
       <h2>🍚 அரிசி மாவு ஆர்டர்</h2>
@@ -119,20 +86,8 @@ export default function ItemTamil() {
       {/* Slot Buttons */}
       {date && (
         <div className="slot-buttons btn-group">
-          <button
-            className={slot === "morning" ? "active" : ""}
-            disabled={isMorningDisabled}
-            onClick={() => setSlot("morning")}
-          >
-            காலை
-          </button>
-          <button
-            className={slot === "evening" ? "active" : ""}
-            disabled={isEveningDisabled}
-            onClick={() => setSlot("evening")}
-          >
-            மாலை
-          </button>
+          <button className={slot === "morning" ? "active" : ""} disabled={isMorningDisabled} onClick={() => setSlot("morning")}>காலை</button>
+          <button className={slot === "evening" ? "active" : ""} disabled={isEveningDisabled} onClick={() => setSlot("evening")}>மாலை</button>
         </div>
       )}
 
@@ -148,24 +103,16 @@ export default function ItemTamil() {
         </Canvas>
       </div>
 
-      {/* Quantity Selector */}
+      {/* Quantity */}
       <div className="quantity-selector">
-        <button aria-label="குறை" onClick={() => setQuantity(q => Math.max(1, q - 1))}>-</button>
+        <button onClick={() => setQuantity(q => Math.max(1, q - 1))}>-</button>
         <span className="qty-value">{quantity}</span>
-        <button aria-label="அதிகரி" onClick={() => setQuantity(q => q + 1)}>+</button>
+        <button onClick={() => setQuantity(q => q + 1)}>+</button>
       </div>
 
       {/* Instructions */}
       <div className="instructions">
-        <button type="button" className="instructions-btn" onClick={() => setInstructions(v => !v)}>
-          குறிப்பு சேர்க்க
-        </button>
-        <textarea
-          placeholder="குறிப்பு (விருப்பம்)"
-          value={instructions}
-          onChange={e => setInstructions(e.target.value)}
-          rows={3}
-        />
+        <textarea value={instructions} onChange={e => setInstructions(e.target.value)} placeholder="குறிப்பு (விருப்பம்)" rows={3} />
       </div>
 
       {/* Confirm */}
