@@ -1584,3 +1584,52 @@ textarea:focus-visible {
     display: none;
   }
 }
+
+
+.payment-method-section {
+  margin: 24px 0;
+}
+
+.payment-method-section label {
+  display: block;
+  font-size: clamp(14px, 3vw, 16px);
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #333;
+}
+
+.payment-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.payment-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+  border: 2px solid #e0e0e0;
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-smooth);
+  font-size: clamp(14px, 3vw, 16px);
+  font-weight: 600;
+}
+
+.payment-option:hover {
+  border-color: #667eea;
+  background: linear-gradient(135deg, #f0f2ff 0%, #ffffff 100%);
+  transform: translateX(3px);
+}
+
+.payment-option input[type="radio"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.payment-option input[type="radio"]:checked + span {
+  color: #667eea;
+}

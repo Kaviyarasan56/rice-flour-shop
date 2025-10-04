@@ -1,4 +1,3 @@
-// Home.js
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { registerUser, getUserByDevice } from "../api";
@@ -8,7 +7,6 @@ export default function Home({ deviceId, registered, setRegistered }) {
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ name: "", village: "", phone: "", otherInfo: "" });
   const [error, setError] = useState("");
-  const [successVisible, setSuccessVisible] = useState(false);
   const navigate = useNavigate?.() ?? null;
 
   useEffect(() => {
@@ -31,13 +29,6 @@ export default function Home({ deviceId, registered, setRegistered }) {
     checkReg();
   }, [deviceId, setRegistered]);
 
-  function validatePhone(p) {
-    const cleaned = p.replace(/\s+/g, "");
-    const tenDigit = /^\d{10}$/;
-    const plus91 = /^\+91\d{10}$/;
-    return tenDigit.test(cleaned) || plus91.test(cleaned);
-  }
-
   async function submitRegistration(e) {
     e.preventDefault();
     setError("");
@@ -52,7 +43,6 @@ export default function Home({ deviceId, registered, setRegistered }) {
       setRegistered(true);
       setShowForm(false);
     } catch (err) {
-      // ✅ Show backend message
       if (err.message.includes("ஏற்கனவே பதிவு")) {
         setError("இந்த தொலைபேசி எண் ஏற்கனவே பதிவு செய்யப்பட்டுள்ளது.");
       } else {
@@ -62,7 +52,6 @@ export default function Home({ deviceId, registered, setRegistered }) {
       setLoading(false);
     }
   }
-  
 
   function goToItem() {
     if (navigate) navigate("/item");
@@ -71,7 +60,6 @@ export default function Home({ deviceId, registered, setRegistered }) {
 
   return (
     <div className="home-page">
-      {/* Hero Section */}
       <div className="hero-section">
         <div className="hero-background" />
         <div className="hero-content">
@@ -89,7 +77,7 @@ export default function Home({ deviceId, registered, setRegistered }) {
             <div className="promo-icon">🎁</div>
             <div className="promo-content">
               <h3>Welcome Bonus!</h3>
-              <p>பிற தகவல்களை வழங்கினால் ₹10 தள்ளுபடி கொடுப்போம்.</p>
+              <p>பிற தகவல்களை வழங்கினால் ₹5 தள்ளுபடி கொடுப்போம்.</p>
               <button className="btn-promo" onClick={() => setShowForm(true)}>
                 <span>பிற தகவல்கள்</span>
                 <span className="btn-arrow">→</span>
@@ -103,7 +91,7 @@ export default function Home({ deviceId, registered, setRegistered }) {
             <div className="success-icon">✓</div>
             <div>
               <strong>வெற்றி!</strong>
-              <p>உங்கள் கருவியில் பதிவு செய்யப்பட்டுள்ளது. ₹10 தள்ளுபடி வழங்கப்படுகிறது.</p>
+              <p>உங்கள் கருவியில் பதிவு செய்யப்பட்டுள்ளது. ₹5 தள்ளுபடி வழங்கப்படுகிறது.</p>
             </div>
           </div>
         )}
@@ -124,7 +112,6 @@ export default function Home({ deviceId, registered, setRegistered }) {
         </div>
       </div>
 
-      {/* Registration Form Modal */}
       {showForm && (
         <div className="modal-overlay" onClick={() => setShowForm(false)}>
           <div className="modal-content big-form fancy-form" onClick={(e) => e.stopPropagation()}>
@@ -173,18 +160,6 @@ export default function Home({ deviceId, registered, setRegistered }) {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* Success Modal */}
-      {successVisible && (
-        <div className="modal-overlay" onClick={() => setSuccessVisible(false)}>
-          <div className="modal-content success-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="success-animation"><div className="checkmark">✓</div></div>
-            <h2>உங்கள் பதிவு வெற்றிகரமாக நிறைவேற்றப்பட்டது 🎉</h2>
-            <p className="success-message">₹10 தள்ளுபடி வழங்கப்பட்டுவிட்டது</p>
-            <button className="btn-done" onClick={() => setSuccessVisible(false)}>சரி</button>
           </div>
         </div>
       )}

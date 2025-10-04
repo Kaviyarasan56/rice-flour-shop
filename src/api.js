@@ -1,31 +1,43 @@
-// Centralized API calls
-export const API_BASE = "https://rice-flour-backend-production.up.railway.app/api";
+const BASE_URL = "http://localhost:8080/api";
 
-export async function postOrder(payload) {
-  const res = await fetch(`${API_BASE}/orders`, {
+export async function registerUser(data) {
+  const res = await fetch(`${BASE_URL}/users/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
-}
-
-export async function registerUser(payload) {
-  const res = await fetch(`${API_BASE}/users/register`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) throw new Error(await res.text());
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text);
+  }
   return res.json();
 }
 
 export async function getUserByDevice(deviceId) {
-  const res = await fetch(`${API_BASE}/users/by-device/${encodeURIComponent(deviceId)}`);
-  if (res.status === 404) {
-    return null;
+  const res = await fetch(`${BASE_URL}/users/by-device/${deviceId}`);
+  if (!res.ok) return null;
+  return res.json();
+}
+
+export async function createPaymentOrder(data) {
+  const res = await fetch(`${BASE_URL}/payments/create`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Payment creation failed");
+  return res.json();
+}
+
+export async function postOrder(data) {
+  const res = await fetch(`${BASE_URL}/orders`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text);
   }
-  if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
