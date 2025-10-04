@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:8080/api";
+const BASE_URL = "https://rice-flour-backend-production.up.railway.app/api/orders";
 
 export async function registerUser(data) {
   const res = await fetch(`${BASE_URL}/users/register`, {
