@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { postOrder, getUserByDevice, createPaymentOrder } from "../api";
 
 export default function Item({ deviceId, registered, setRegistered }) {
-  const UNIT_PRICE = 25;
+  const UNIT_PRICE = 30;
 
   const [dayChoice, setDayChoice] = useState(null);
   const [slotChoice, setSlotChoice] = useState(null);
