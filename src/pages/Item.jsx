@@ -64,43 +64,36 @@ export default function Item({ deviceId, registered, setRegistered }) {
   const subtotal = UNIT_PRICE * quantity;
   const total = Math.max(0, subtotal - qtyDiscount - regDiscount);
 
-  function chooseWhen(choice) {
-    const now = new Date();
-    const hour = now.getHours();
+  // Replace the chooseWhen function:
+function chooseWhen(choice) {
+  const now = new Date();
+  const hour = now.getHours();
 
-    if (choice === "today") {
-      if (slotChoice === "morning") {
-        alert("காலை ஸ்லாட் முடிந்துவிட்டது (12 AM க்கு பிறகு)");
-        return;
-      }
-      if (slotChoice === "evening" && hour >= 10) {
-        alert("மாலை ஸ்லாட் முடிந்துவிட்டது (10 AM க்கு பிறகு)");
-        return;
-      }
+  // Don't check slot here - just set the day choice
+  setDayChoice(choice);
+  setShowSlotOverlay(true);
+}
+
+// Replace the chooseSlot function:
+function chooseSlot(slot) {
+  const now = new Date();
+  const hour = now.getHours();
+
+  // Validate cutoff based on selected day and this slot
+  if (dayChoice === "today") {
+    if (slot === "morning" && hour >= 0) {
+      alert("காலை ஸ்லாட் முடிந்துவிட்டது (12 AM க்கு பிறகு)");
+      return;
     }
-
-    setDayChoice(choice);
-    setShowSlotOverlay(true);
+    if (slot === "evening" && hour >= 10) {
+      alert("மாலை ஸ்லாட் முடிந்துவிட்டது (10 AM க்கு பிறகு)");
+      return;
+    }
   }
 
-  function chooseSlot(slot) {
-    const now = new Date();
-    const hour = now.getHours();
-
-    if (dayChoice === "today") {
-      if (slot === "morning" && hour >= 0) {
-        alert("காலை ஸ்லாட் முடிந்துவிட்டது");
-        return;
-      }
-      if (slot === "evening" && hour >= 10) {
-        alert("மாலை ஸ்லாட் முடிந்துவிட்டது");
-        return;
-      }
-    }
-
-    setSlotChoice(slot);
-    setShowSlotOverlay(false);
-  }
+  setSlotChoice(slot);
+  setShowSlotOverlay(false);
+}
 
   async function confirmOrder() {
     if (!dayChoice || !slotChoice) {
