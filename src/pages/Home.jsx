@@ -12,11 +12,15 @@ export default function Home({ deviceId, registered, setRegistered }) {
   useEffect(() => {
     async function checkReg() {
       try {
+        // Check localStorage first - avoid unnecessary API calls
         if (localStorage.getItem("registered") === "1") {
           setRegistered(true);
           return;
         }
+        
+        // Only check backend if localStorage says not registered
         if (!deviceId) return;
+        
         const u = await getUserByDevice(deviceId);
         if (u) {
           localStorage.setItem("registered", "1");
@@ -24,6 +28,7 @@ export default function Home({ deviceId, registered, setRegistered }) {
         }
       } catch (err) {
         console.warn("getUserByDevice failed:", err);
+        // Don't show error - registration might still be valid locally
       }
     }
     checkReg();

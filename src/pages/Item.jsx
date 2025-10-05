@@ -21,7 +21,7 @@ export default function Item({ deviceId, registered, setRegistered }) {
 
   const navigate = useNavigate?.() ?? null;
 
-  // ✅ Load Razorpay SDK dynamically if not present
+  // Load Razorpay SDK dynamically if not present
   useEffect(() => {
     if (window.Razorpay) {
       setRazorpayReady(true);
@@ -35,24 +35,58 @@ export default function Item({ deviceId, registered, setRegistered }) {
     document.body.appendChild(script);
   }, []);
 
-  // ✅ Fetch user info by device ID
+  // Fetch user info by device ID - with better error handling
   useEffect(() => {
     async function check() {
       try {
-        if (!deviceId) return;
-        const u = await getUserByDevice(deviceId);
-        if (u) {
-          setUserRegistered(true);
-          setUserName(u.name || "");
-          setUserPhone(u.phone || "");
-          localStorage.setItem("registered", "1");
-          setRegistered(true);
-        } else {
-          alert("முதலில் பதிவு செய்யவும் / Please register first");
+        if (!deviceId) {
+          alert("Device ID இல்லை. பக்கத்தை மீண்டும் ஏற்றவும்.");
           goHome();
+          return;
+        }
+
+        // First check localStorage
+        const localReg = localStorage.getItem("registered");
+        if (localReg === "1") {
+          // User claims to be registered, verify with backend
+          try {
+            const u = await getUserByDevice(deviceId);
+            if (u) {
+              setUserRegistered(true);
+              setUserName(u.name || "");
+              setUserPhone(u.phone || "");
+              setRegistered(true);
+              return; // Successfully verified
+            }
+          } catch (apiErr) {
+            // Backend failed but localStorage says registered - trust it
+            console.warn("Backend check failed, using localStorage:", apiErr);
+            setUserRegistered(true);
+            setUserName("User");
+            setUserPhone("");
+            setRegistered(true);
+            return;
+          }
+        }
+
+        // If we reach here, user is not registered
+        const shouldRegister = window.confirm(
+          "முதலில் பதிவு செய்ய வேண்டும். முகப்பு பக்கத்திற்கு செல்லவா?"
+        );
+        
+        if (shouldRegister) {
+          goHome();
+        } else {
+          // User chose to stay - redirect them anyway after 2 seconds
+          setTimeout(() => {
+            alert("பதிவு இல்லாமல் ஆர்டர் செய்ய முடியாது");
+            goHome();
+          }, 2000);
         }
       } catch (err) {
-        console.warn("getUserByDevice failed:", err);
+        console.error("Registration check error:", err);
+        alert("பதிவு சரிபார்க்க முடியவில்லை. மீண்டும் முயற்சிக்கவும்.");
+        goHome();
       }
     }
     check();
@@ -64,36 +98,30 @@ export default function Item({ deviceId, registered, setRegistered }) {
   const subtotal = UNIT_PRICE * quantity;
   const total = Math.max(0, subtotal - qtyDiscount - regDiscount);
 
-  // Replace the chooseWhen function:
-function chooseWhen(choice) {
-  const now = new Date();
-  const hour = now.getHours();
-
-  // Don't check slot here - just set the day choice
-  setDayChoice(choice);
-  setShowSlotOverlay(true);
-}
-
-// Replace the chooseSlot function:
-function chooseSlot(slot) {
-  const now = new Date();
-  const hour = now.getHours();
-
-  // Validate cutoff based on selected day and this slot
-  if (dayChoice === "today") {
-    if (slot === "morning" && hour >= 0) {
-      alert("காலை ஸ்லாட் முடிந்துவிட்டது (12 AM க்கு பிறகு)");
-      return;
-    }
-    if (slot === "evening" && hour >= 10) {
-      alert("மாலை ஸ்லாட் முடிந்துவிட்டது (10 AM க்கு பிறகு)");
-      return;
-    }
+  function chooseWhen(choice) {
+    setDayChoice(choice);
+    setShowSlotOverlay(true);
   }
 
-  setSlotChoice(slot);
-  setShowSlotOverlay(false);
-}
+  function chooseSlot(slot) {
+    const now = new Date();
+    const hour = now.getHours();
+
+    // Validate cutoff based on selected day and this slot
+    if (dayChoice === "today") {
+      if (slot === "morning" && hour >= 0) {
+        alert("காலை ஸ்லாட் முடிந்துவிட்டது (12 AM க்கு பிறகு)");
+        return;
+      }
+      if (slot === "evening" && hour >= 10) {
+        alert("மாலை ஸ்லாட் முடிந்துவிட்டது (10 AM க்கு பிறகு)");
+        return;
+      }
+    }
+
+    setSlotChoice(slot);
+    setShowSlotOverlay(false);
+  }
 
   async function confirmOrder() {
     if (!dayChoice || !slotChoice) {
@@ -144,10 +172,9 @@ function chooseSlot(slot) {
           contact: userPhone,
         },
   
-        // ✅ Enable UPI Intent Flow
         method: { upi: true },
         upi: {
-          flow: "intent", // shows installed UPI apps
+          flow: "intent",
         },
   
         handler: async function (response) {
@@ -168,7 +195,6 @@ function chooseSlot(slot) {
   
       const rzp = new window.Razorpay(options);
   
-      // ✅ Optional: listen to failure
       rzp.on("payment.failed", function (response) {
         console.warn("Payment failed:", response.error);
         alert("பேமெண்ட் தோல்வியடைந்தது. தயவுசெய்து மீண்டும் முயற்சிக்கவும்.");
@@ -386,7 +412,7 @@ function chooseSlot(slot) {
             onClick={() => setConfirmVisible(true)}
             disabled={busy}
           >
-            <span>{busy ? "காத்திரு..." : "ஆர்டர் செய்"}</span> <span>🛒</span>
+            <span>{busy ? "காத்திர..." : "ஆர்டர் செய்"}</span> <span>🛒</span>
           </button>
         </div>
       </div>
