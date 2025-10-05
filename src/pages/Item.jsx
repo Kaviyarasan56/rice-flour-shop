@@ -1,509 +1,275 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { postOrder, getUserByDevice, createPaymentOrder } from "../api";
+import { registerUser, getUserByDevice } from "../api";
 
-export default function Item({ deviceId, registered, setRegistered }) {
-  const UNIT_PRICE = 30;
-
-  const [dayChoice, setDayChoice] = useState(null);
-  const [slotChoice, setSlotChoice] = useState(null);
-  const [showSlotOverlay, setShowSlotOverlay] = useState(false);
-  const [quantity, setQuantity] = useState(1);
-  const [instructions, setInstructions] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("COD");
-  const [confirmVisible, setConfirmVisible] = useState(false);
-  const [successVisible, setSuccessVisible] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [userRegistered, setUserRegistered] = useState(registered);
-  const [userName, setUserName] = useState("");
-  const [userPhone, setUserPhone] = useState("");
-  const [razorpayReady, setRazorpayReady] = useState(false);
-
+export default function Home({ deviceId, registered, setRegistered }) {
+  const [showForm, setShowForm] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [checking, setChecking] = useState(true);
+  const [form, setForm] = useState({ name: "", village: "", phone: "", otherInfo: "" });
+  const [error, setError] = useState("");
+  const [showSuccessBanner, setShowSuccessBanner] = useState(false);
   const navigate = useNavigate?.() ?? null;
 
-  // Load Razorpay SDK dynamically if not present
   useEffect(() => {
-    if (window.Razorpay) {
-      setRazorpayReady(true);
-      return;
-    }
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.async = true;
-    script.onload = () => setRazorpayReady(true);
-    script.onerror = () => alert("Razorpay SDK load failed. Please refresh.");
-    document.body.appendChild(script);
-  }, []);
+    async function checkReg() {
+      if (!deviceId) {
+        setChecking(false);
+        return;
+      }
 
-  // Fetch user info by device ID - with better error handling
-  useEffect(() => {
-    async function check() {
       try {
-        if (!deviceId) {
-          alert("Device ID இல்லை. பக்கத்தை மீண்டும் ஏற்றவும்.");
-          goHome();
-          return;
-        }
-
-        // First check localStorage
-        const localReg = localStorage.getItem("registered");
-        if (localReg === "1") {
-          // User claims to be registered, verify with backend
-          try {
-            const u = await getUserByDevice(deviceId);
-            if (u) {
-              setUserRegistered(true);
-              setUserName(u.name || "");
-              setUserPhone(u.phone || "");
-              setRegistered(true);
-              return; // Successfully verified
-            }
-          } catch (apiErr) {
-            // Backend failed but localStorage says registered - trust it
-            console.warn("Backend check failed, using localStorage:", apiErr);
-            setUserRegistered(true);
-            setUserName("User");
-            setUserPhone("");
-            setRegistered(true);
-            return;
-          }
-        }
-
-        // If we reach here, user is not registered
-        const shouldRegister = window.confirm(
-          "முதலில் பதிவு செய்ய வேண்டும். முகப்பு பக்கத்திற்கு செல்லவா?"
-        );
+        const user = await getUserByDevice(deviceId);
         
-        if (shouldRegister) {
-          goHome();
-        } else {
-          // User chose to stay - redirect them anyway after 2 seconds
+        if (user) {
+          localStorage.setItem("registered", "1");
+          setRegistered(true);
+          setShowSuccessBanner(true);
+          
           setTimeout(() => {
-            alert("பதிவு இல்லாமல் ஆர்டர் செய்ய முடியாது");
-            goHome();
-          }, 2000);
+            setShowSuccessBanner(false);
+          }, 5000);
+        } else {
+          localStorage.removeItem("registered");
+          localStorage.removeItem("firstDiscountUsed");
+          setRegistered(false);
         }
       } catch (err) {
-        console.error("Registration check error:", err);
-        alert("பதிவு சரிபார்க்க முடியவில்லை. மீண்டும் முயற்சிக்கவும்.");
-        goHome();
+        console.error("Failed to check registration:", err);
+        alert("Cannot verify registration status. Please check your connection.");
+      } finally {
+        setChecking(false);
       }
     }
-    check();
+    
+    checkReg();
   }, [deviceId, setRegistered]);
 
-  const firstOrderUsed = localStorage.getItem("firstDiscountUsed") === "1";
-  const qtyDiscount = quantity > 5 ? quantity * 0.5 : 0;
-  const regDiscount = userRegistered && !firstOrderUsed ? 5 : 0;
-  const subtotal = UNIT_PRICE * quantity;
-  const total = Math.max(0, subtotal - qtyDiscount - regDiscount);
-
-  function chooseWhen(choice) {
-    setDayChoice(choice);
-    setShowSlotOverlay(true);
-  }
-
-  function chooseSlot(slot) {
-    const now = new Date();
-    const hour = now.getHours();
-
-    // Validate cutoff based on selected day and this slot
-    if (dayChoice === "today") {
-      if (slot === "morning" && hour >= 0) {
-        alert("காலை ஸ்லாட் முடிந்துவிட்டது (12 AM க்கு பிறகு)");
-        return;
-      }
-      if (slot === "evening" && hour >= 10) {
-        alert("மாலை ஸ்லாட் முடிந்துவிட்டது (10 AM க்கு பிறகு)");
-        return;
-      }
-    }
-
-    setSlotChoice(slot);
-    setShowSlotOverlay(false);
-  }
-
-  async function confirmOrder() {
-    if (!dayChoice || !slotChoice) {
-      alert("தயவு செய்து தேதியும் நேரத்தையும் தேர்வு செய்யவும்.");
+  async function submitRegistration(e) {
+    e.preventDefault();
+    setError("");
+    
+    if (!form.name || !form.phone) {
+      setError("பெயர் மற்றும் தொலைபேசி எண்ணை கொடுக்கவும்.");
       return;
     }
-
-    if (!userRegistered) {
-      alert("முதலில் பதிவு செய்யவும்");
-      goHome();
-      return;
-    }
-
-    setConfirmVisible(false);
-
-    if (paymentMethod === "UPI") {
-      await handleUPIPayment();
-    } else {
-      await handleCODOrder();
-    }
-  }
-
-  async function handleUPIPayment() {
-    if (!razorpayReady || !window.Razorpay) {
-      alert("Razorpay SDK இன்னும் ஏற்றப்படவில்லை. தயவுசெய்து சிறிது நேரம் காத்திருக்கவும்.");
-      return;
-    }
-  
-    setBusy(true);
+    
+    setLoading(true);
+    
     try {
-      const paymentData = await createPaymentOrder({
-        deviceId,
-        quantity,
-        date: dayChoice,
-        slot: slotChoice,
-        totalAmount: total,
-      });
-  
-      const options = {
-        key: paymentData.keyId,
-        amount: paymentData.amount,
-        currency: "INR",
-        name: "அரிசி மாவு ஆர்டர்",
-        description: `${dayChoice} - ${slotChoice}`,
-        order_id: paymentData.orderId,
-        prefill: {
-          name: userName,
-          contact: userPhone,
-        },
-  
-        method: { upi: true },
-        upi: {
-          flow: "intent",
-        },
-  
-        handler: async function (response) {
-          console.log("Payment success:", response);
-          await placeOrderWithPayment(response);
-        },
-  
-        modal: {
-          ondismiss: function () {
-            setBusy(false);
-            alert("பேமெண்ட் ரத்து செய்யப்பட்டது");
-          },
-        },
-        theme: {
-          color: "#3399cc",
-        },
-      };
-  
-      const rzp = new window.Razorpay(options);
-  
-      rzp.on("payment.failed", function (response) {
-        console.warn("Payment failed:", response.error);
-        alert("பேமெண்ட் தோல்வியடைந்தது. தயவுசெய்து மீண்டும் முயற்சிக்கவும்.");
-        setBusy(false);
-      });
-  
-      rzp.open();
-    } catch (err) {
-      console.error("Payment creation error:", err);
-      setBusy(false);
-      alert("பேமெண்ட் உருவாக்கம் தோல்வி: " + err.message);
-    }
-  }
-  
-  async function placeOrderWithPayment(paymentResponse) {
-    try {
-      await postOrder({
-        deviceId,
-        quantity,
-        instructions,
-        date: dayChoice,
-        slot: slotChoice,
-        totalPrice: total,
-        paymentMethod: "UPI",
-        razorpayOrderId: paymentResponse.razorpay_order_id,
-        razorpayPaymentId: paymentResponse.razorpay_payment_id,
-        razorpaySignature: paymentResponse.razorpay_signature,
-      });
-
-      if (!firstOrderUsed && userRegistered) {
-        localStorage.setItem("firstDiscountUsed", "1");
+      const user = await registerUser({ ...form, deviceId });
+      
+      if (user && user.id) {
+        localStorage.setItem("registered", "1");
+        setRegistered(true);
+        setShowForm(false);
+        setShowSuccessBanner(true);
+        
+        setTimeout(() => {
+          setShowSuccessBanner(false);
+        }, 5000);
+      } else {
+        throw new Error("Registration failed - no user returned");
       }
-
-      setBusy(false);
-      setSuccessVisible(true);
-      setTimeout(() => goHome(), 5000);
     } catch (err) {
-      setBusy(false);
-      alert("ஆர்டர் சிக்கல்: " + err.message);
-    }
-  }
-
-  async function handleCODOrder() {
-    setBusy(true);
-    try {
-      await postOrder({
-        deviceId,
-        quantity,
-        instructions,
-        date: dayChoice,
-        slot: slotChoice,
-        totalPrice: total,
-        paymentMethod: "COD",
-      });
-
-      if (!firstOrderUsed && userRegistered) {
-        localStorage.setItem("firstDiscountUsed", "1");
+      if (err.message.includes("ஏற்கனவே பதிவு")) {
+        setError("இந்த தொலைபேசி எண் ஏற்கனவே பதிவு செய்யப்பட்டுள்ளது.");
+      } else {
+        setError("பதிவில் தவறு: " + (err.message || err));
       }
-
-      setSuccessVisible(true);
-      setTimeout(() => goHome(), 5000);
-    } catch (err) {
-      alert("ஆர்டர் சிக்கல்: " + err.message);
     } finally {
-      setBusy(false);
+      setLoading(false);
     }
   }
 
-  function goBack() {
-    if (navigate) navigate(-1);
-    else window.location.hash = "#/";
+  function goToItem() {
+    if (navigate) navigate("/item");
+    else window.location.hash = "#/item";
   }
 
-  function goHome() {
-    setSuccessVisible(false);
-    if (navigate) navigate("/");
-    else window.location.hash = "#/";
+  if (checking) {
+    return (
+      <div className="home-page">
+        <div className="hero-section">
+          <div className="hero-background" />
+          <div className="hero-content">
+            <div className="hero-badge">🌾 Premium Quality</div>
+            <h1 className="hero-title">
+              எளிய முறையில் உங்களுக்குத் தேவையான பொருட்களை இங்கே ஆர்டர் செய்யலாம்
+            </h1>
+            <p className="hero-subtitle">Fresh • Fast • Reliable</p>
+          </div>
+        </div>
+        <div className="content-container">
+          <div className="main-card">
+            <p style={{ textAlign: "center", padding: "20px" }}>சரிபார்க்கிறது...</p>
+          </div>
+        </div>
+      </div>
+    );
   }
-
-  const dayLabel =
-    dayChoice === "today" ? "இன்று" : dayChoice === "tomorrow" ? "நாளை" : "";
-  const slotLabel =
-    slotChoice === "morning" ? "காலை" : slotChoice === "evening" ? "மாலை" : "";
 
   return (
-    <div className="item-page">
-      <div className="page-header">
-        <button className="back-btn" onClick={goBack}>
-          ← Back
-        </button>
-        <h1>எப்போது வேண்டும் எனபதைத் தேர்வு செய்யவும்?</h1>
+    <div className="home-page">
+      <div className="hero-section">
+        <div className="hero-background" />
+        <div className="hero-content">
+          <div className="hero-badge">🌾 Premium Quality</div>
+          <h1 className="hero-title">
+            எளிய முறையில் உங்களுக்குத் தேவையான பொருட்களை இங்கே ஆர்டர் செய்யலாம்
+          </h1>
+          <p className="hero-subtitle">Fresh • Fast • Reliable</p>
+        </div>
       </div>
 
-      <div className="item-container">
-        {/* Delivery section */}
-        <div className="delivery-section">
-          <h3>📅 Delivery Time</h3>
-          <div className="time-options">
-            <button
-              className={`time-btn ${dayChoice === "today" ? "active" : ""}`}
-              onClick={() => chooseWhen("today")}
-            >
-              <span className="time-icon">☀️</span>
-              <span>இன்று</span>
-            </button>
-            <button
-              className={`time-btn ${dayChoice === "tomorrow" ? "active" : ""}`}
-              onClick={() => chooseWhen("tomorrow")}
-            >
-              <span className="time-icon">🌙</span>
-              <span>நாளை</span>
-            </button>
-          </div>
-          {dayChoice && slotChoice && (
-            <div className="selected-time">
-              ✓ {dayLabel} - {slotLabel}
-            </div>
-          )}
-        </div>
-
-        {/* Product */}
-        <div className="product-showcase">
-          <div className="product-image-container">
-            <div className="product-badge">Premium</div>
-            <div className="product-image">🌾</div>
-            <div className="image-glow" />
-          </div>
-          <h2 className="product-name">அரிசி மாவு</h2>
-          <p className="product-description">Fresh, High Quality Rice Flour</p>
-        </div>
-
-        {/* Pricing */}
-        <div className="pricing-card">
-          <div className="price-header">
-            <span>Unit Price</span>
-            <span className="price-tag">₹{UNIT_PRICE}</span>
-          </div>
-
-          <div className="quantity-section">
-            <label>எத்தனை வேண்டும் எனபதைத் தேர்வு செய்யவும்:</label>
-            <div className="quantity-control">
-              <button
-                className="qty-btn"
-                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-              >
-                −
-              </button>
-              <div className="qty-display">{quantity}</div>
-              <button className="qty-btn" onClick={() => setQuantity((q) => q + 1)}>
-                +
+      <div className="content-container">
+        {!registered && (
+          <div className="promo-card">
+            <div className="promo-icon">🎁</div>
+            <div className="promo-content">
+              <h3>Welcome Bonus!</h3>
+              <p>பிற தகவல்களை வழங்கினால் ₹5 தள்ளுபடி கொடுப்போம்.</p>
+              <button className="btn-promo" onClick={() => setShowForm(true)}>
+                <span>பிற தகவல்கள்</span>
+                <span className="btn-arrow">→</span>
               </button>
             </div>
           </div>
+        )}
 
-          <div className="price-breakdown">
-            <div className="price-row">
-              <span>Subtotal ({quantity})</span>
-              <span>₹{subtotal}</span>
+        {registered && showSuccessBanner && (
+          <div className="success-banner animate-in">
+            <div className="success-icon">✓</div>
+            <div>
+              <strong>வெற்றி!</strong>
+              <p>உங்கள் கர்வியில் பதிவு செய்யப்பட்டுள்ளது. ₹5 தள்ளுபடி வழங்கப்படுகிறது.</p>
             </div>
-            {qtyDiscount > 0 && (
-              <div className="price-row discount">
-                <span>Bulk discount (₹0.5/unit)</span>
-                <span>-₹{qtyDiscount.toFixed(2)}</span>
+          </div>
+        )}
+
+        {registered && !showSuccessBanner && (
+          <>
+            {/* Quick Features */}
+            <div className="quick-features">
+              <div className="quick-feature">
+                <span className="quick-icon">⚡</span>
+                <span className="quick-text">Same Day Delivery</span>
               </div>
-            )}
-            {regDiscount > 0 && (
-              <div className="price-row discount">
-                <span>Registration discount</span>
-                <span>-₹{regDiscount}</span>
+              <div className="quick-feature">
+                <span className="quick-icon">✨</span>
+                <span className="quick-text">Fresh Daily</span>
               </div>
-            )}
-            <div className="price-row total">
-              <span>மொத்தம்</span>
-              <span>₹{total.toFixed(2)}</span>
+              <div className="quick-feature">
+                <span className="quick-icon">💰</span>
+                <span className="quick-text">Best Price</span>
+              </div>
+            </div>
+
+            {/* Customer Review */}
+            <div className="customer-highlight">
+              <div className="highlight-header">
+                <span className="rating-stars">⭐⭐⭐⭐⭐</span>
+                <span className="rating-text">4.9 Rating</span>
+              </div>
+              <p className="highlight-quote">
+                "மிகவும் தரமான அரிசி மாவு. விரைவான டெலிவரி!"
+              </p>
+              <div className="highlight-stats">
+                <div className="stat-mini">
+                  <strong>50+</strong>
+                  <span>Customers</span>
+                </div>
+                <div className="stat-mini">
+                  <strong>200+</strong>
+                  <span>Orders</span>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        <div className="main-card">
+          <div className="card-header">
+            <div className="card-icon">📦</div>
+            <div>
+              <h2>பிரதான பொருள்</h2>
+              <p className="card-subtitle">குறைந்த விலையில் நல்ல விதமான அரிசி மாவு.</p>
             </div>
           </div>
 
-          {/* Payment */}
-          <div className="payment-method-section">
-            <label>Payment Method:</label>
-            <div className="payment-options">
-              <label className="payment-option">
-                <input
-                  type="radio"
-                  value="COD"
-                  checked={paymentMethod === "COD"}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                />
-                <span>💵 Cash on Delivery (இயல்பான)</span>
-              </label>
-              <label className="payment-option">
-                <input
-                  type="radio"
-                  value="UPI"
-                  checked={paymentMethod === "UPI"}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                />
-                <span>💳 UPI (Razorpay)</span>
-              </label>
-            </div>
-          </div>
-
-          {/* Notes */}
-          <div className="instructions-section">
-            <label>குறிப்பு</label>
-            <textarea
-              placeholder="கூடுதல் குறிப்புகள்..."
-              value={instructions}
-              onChange={(e) => setInstructions(e.target.value)}
-            />
-          </div>
-
-          <button
-            className="order-btn"
-            onClick={() => setConfirmVisible(true)}
-            disabled={busy}
-          >
-            <span>{busy ? "காத்திர..." : "ஆர்டர் செய்"}</span> <span>🛒</span>
+          <button className="btn-primary pulse-animation" onClick={goToItem}>
+            <span>பொருள் பார்க்க</span>
+            <span className="btn-shine" aria-hidden />
           </button>
         </div>
+
+        {/* Trust Indicators */}
+        {registered && !showSuccessBanner && (
+          <div className="trust-indicators">
+            <div className="trust-item">
+              <span className="trust-icon">🔒</span>
+              <span className="trust-text">Secure Payment</span>
+            </div>
+            <div className="trust-item">
+              <span className="trust-icon">✓</span>
+              <span className="trust-text">Quality Assured</span>
+            </div>
+            <div className="trust-item">
+              <span className="trust-icon">🚚</span>
+              <span className="trust-text">Fast Delivery</span>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Slot selection modal */}
-      {showSlotOverlay && (
-        <div className="modal-overlay" onClick={() => setShowSlotOverlay(false)}>
-          <div
-            className="modal-content slot-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2>🕒 நேரத்தைத் தேர்வு செய்யவும்</h2>
-            <p className="slot-desc">
-              உங்களுக்கு விருப்பமான நேரத்தை தேர்வு செய்யுங்கள்
-            </p>
-            <div className="slot-options">
-              <button className="slot-btn" onClick={() => chooseSlot("morning")}>
-                🌅 <strong>காலை</strong>
-                <span className="slot-time">6 AM - 12 PM</span>
-              </button>
-              <button className="slot-btn" onClick={() => chooseSlot("evening")}>
-                🌆 <strong>மாலை</strong>
-                <span className="slot-time">4 PM - 8 PM</span>
-              </button>
+      {showForm && (
+        <div className="modal-overlay" onClick={() => setShowForm(false)}>
+          <div className="modal-content big-form fancy-form" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setShowForm(false)}>×</button>
+            <div className="modal-header">
+              <div className="modal-icon">📝</div>
+              <h2>பதிவு செய்யவும்</h2>
+              <p>உங்கள் தகவல்களை வழங்கினால் தள்ளுபடி வழங்கப்படும்</p>
             </div>
-          </div>
-        </div>
-      )}
 
-      {/* Confirmation modal */}
-      {confirmVisible && (
-        <div className="modal-overlay" onClick={() => setConfirmVisible(false)}>
-          <div
-            className="modal-content confirm-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="confirm-icon">❓</div>
-            <h2>நிச்சயமாக ஆர்டரை பதிவு செய்யலாமா?</h2>
-            <div className="confirm-details">
-              <p>
-                <strong>Quantity:</strong> {quantity}
-              </p>
-              <p>
-                <strong>Total:</strong> ₹{total.toFixed(2)}
-              </p>
-              <p>
-                <strong>Delivery:</strong> {dayLabel} - {slotLabel}
-              </p>
-              <p>
-                <strong>Payment:</strong>{" "}
-                {paymentMethod === "UPI"
-                  ? "UPI (Razorpay)"
-                  : "Cash on Delivery"}
-              </p>
-            </div>
-            <div className="confirm-actions">
-              <button
-                className="btn-cancel"
-                onClick={() => setConfirmVisible(false)}
-              >
-                இல்லை
-              </button>
-              <button
-                className="btn-confirm"
-                onClick={confirmOrder}
-                disabled={busy}
-              >
-                {busy ? "காத்திர..." : "ஆம்"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            <form onSubmit={submitRegistration} className="modal-form big-inputs" noValidate>
+              <div className="form-group">
+                <label>பெயர் *</label>
+                <input type="text" value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  placeholder="உங்கள் பெயரை உள்ளிடவும்" autoFocus />
+              </div>
 
-      {/* Success modal */}
-      {successVisible && (
-        <div className="modal-overlay" onClick={goHome}>
-          <div
-            className="modal-content success-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="success-animation">
-              <div className="checkmark">✓</div>
-            </div>
-            <h2>உங்கள் ஆர்டர் வெற்றிகரமாக பெறப்பட்டது 🎉</h2>
-            <p className="success-message">
-              நன்றி! விரைவில் உங்களுக்கு வந்து சேர்க்கப்படும்.
-            </p>
-            <button className="btn-done" onClick={goHome}>
-              சரி
-            </button>
+              <div className="form-group">
+                <label>ஊர்</label>
+                <input type="text" value={form.village}
+                  onChange={(e) => setForm({ ...form, village: e.target.value })}
+                  placeholder="உங்கள் ஊரை உள்ளிடவும்" />
+              </div>
+
+              <div className="form-group">
+                <label>தொலைபேசி எண் *</label>
+                <input type="tel" value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  placeholder="+91 XXXXX XXXXX" />
+              </div>
+
+              <div className="form-group">
+                <label>பிற குறிப்புகள்</label>
+                <textarea value={form.otherInfo}
+                  onChange={(e) => setForm({ ...form, otherInfo: e.target.value })}
+                  placeholder="கூடுதல் தகவல்கள்..." rows="3" />
+              </div>
+
+              {error && <div className="error-message">{error}</div>}
+
+              <div className="form-actions">
+                <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>முடக்கு</button>
+                <button type="submit" className="btn-submit" disabled={loading}>
+                  {loading ? "இடையே..." : "பதிவு செய்"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
