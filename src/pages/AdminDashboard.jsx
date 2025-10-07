@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const BASE_URL = "http://localhost:8080/api";
+const BASE_URL =
+  process.env.NODE_ENV === "production"
+    ? "https://rice-flour-backend-production.up.railway.app/api"
+    : "http://localhost:8080/api";
+
 
 export default function AdminDashboard() {
   const [orders, setOrders] = useState([]);
