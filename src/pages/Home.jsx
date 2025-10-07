@@ -140,7 +140,7 @@ export default function Home({ deviceId, registered, setRegistered }) {
     setLoading(true);
     
     try {
-      const response = await fetch("http://localhost:8080/api/admin-auth/login", {
+      const response = await fetch("https://rice-flour-backend-production.up.railway.app/api/admin-auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
