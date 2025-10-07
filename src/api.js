@@ -1,73 +1,5 @@
-<<<<<<< HEAD
-const BASE_URL = "https://rice-flour-backend-production.up.railway.app/api";
-//const BASE_URL = "http://localhost:8080/api";
-export async function registerUser(data) {
-  const res = await fetch(`${BASE_URL}/users/register`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-  
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text);
-  }
-  
-  return res.json();
-}
 
-export async function getUserByDevice(deviceId) {
-  const res = await fetch(`${BASE_URL}/users/by-device/${deviceId}`);
-  
-  // 404 means user doesn't exist (not registered)
-  if (res.status === 404) {
-    return null;
-  }
-  
-  // Any other error (500, network failure, etc.) should throw
-  if (!res.ok) {
-    throw new Error(`Server error: ${res.status} ${res.statusText}`);
-  }
-  
-  return res.json();
-}
-
-export async function createPaymentOrder(data) {
-  const res = await fetch(`${BASE_URL}/payments/create`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-  
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || "Payment creation failed");
-  }
-  
-  return res.json();
-}
-
-export async function postOrder(data) {
-  const res = await fetch(`${BASE_URL}/orders`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-  
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || "Order submission failed");
-  }
-  
-  return res.json();
-}
-
-export async function getAllOrders() {
-  const res = await fetch(`${BASE_URL}/orders`);
-  if (!res.ok) return [];
-  return res.json();
-=======
-const BASE_URL = "https://rice-flour-backend-production.up.railway.app/api";
+const BASE_URL = "http://localhost:8080/api";
 // For production, use: const BASE_URL = "https://your-backend-url.up.railway.app/api";
 
 export async function registerUser(data) {
@@ -175,5 +107,5 @@ export async function getAllOrders() {
     console.error("Get all orders error:", error);
     return [];
   }
->>>>>>> 13e916a (Update API base URL and tested locally)
 }
+

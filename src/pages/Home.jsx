@@ -10,28 +10,55 @@ export default function Home({ deviceId, registered, setRegistered }) {
   const [form, setForm] = useState({ name: "", village: "", phone: "", otherInfo: "" });
   const [adminForm, setAdminForm] = useState({ username: "", password: "" });
   const [error, setError] = useState("");
-  const navigate = useNavigate?.() ?? null;
+  const [adminError, setAdminError] = useState("");
+  const [showSuccessBanner, setShowSuccessBanner] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     async function checkReg() {
+      if (!deviceId) {
+        setChecking(false);
+        return;
+      }
+
       try {
-        // Check localStorage first - avoid unnecessary API calls
-        if (localStorage.getItem("registered") === "1") {
-          setRegistered(true);
-          return;
+        // Check if user is admin
+        const adminCheck = await fetch(`http://localhost:8080/api/admin-auth/verify/${deviceId}`);
+        if (adminCheck.ok) {
+          const adminData = await adminCheck.json();
+          if (adminData.isAdmin) {
+            setIsAdmin(true);
+            localStorage.setItem("isAdmin", "1");
+          }
         }
+
+        const user = await getUserByDevice(deviceId);
         
-        // Only check backend if localStorage says not registered
-        if (!deviceId) return;
-        
-        const u = await getUserByDevice(deviceId);
-        if (u) {
+        if (user && user.id) {
           localStorage.setItem("registered", "1");
           setRegistered(true);
+          
+          const justRegistered = sessionStorage.getItem("justRegistered");
+          if (justRegistered === "1") {
+            setShowSuccessBanner(true);
+            sessionStorage.removeItem("justRegistered");
+            
+            setTimeout(() => {
+              setShowSuccessBanner(false);
+            }, 5000);
+          }
+        } else {
+          localStorage.removeItem("registered");
+          localStorage.removeItem("firstDiscountUsed");
+          setRegistered(false);
         }
       } catch (err) {
-        console.warn("getUserByDevice failed:", err);
-        // Don't show error - registration might still be valid locally
+        console.error("Failed to check registration:", err);
+        localStorage.removeItem("registered");
+        setRegistered(false);
+      } finally {
+        setChecking(false);
       }
     }
     
@@ -41,17 +68,51 @@ export default function Home({ deviceId, registered, setRegistered }) {
   async function submitRegistration(e) {
     e.preventDefault();
     setError("");
-    if (!form.name || !form.phone) {
-      setError("பெயர் மற்றும் தொலைபேசி எண்ணை கொடுக்கவும்.");
+    
+    if (!form.name || !form.name.trim()) {
+      setError("பெயர் கொடுக்கவும்.");
+      return;
+    }
+    
+    if (!form.phone || !form.phone.trim()) {
+      setError("தொலைபேசி எண் கொடுக்கவும்.");
+      return;
+    }
+    
+    const phoneRegex = /^[0-9+\s-]{10,15}$/;
+    if (!phoneRegex.test(form.phone.trim())) {
+      setError("சரியான தொலைபேசி எண்ணை உள்ளிடவும்.");
       return;
     }
     
     setLoading(true);
+    
     try {
-      await registerUser({ ...form, deviceId });
-      localStorage.setItem("registered", "1");
-      setRegistered(true);
-      setShowForm(false);
+      const userData = {
+        deviceId: deviceId,
+        name: form.name.trim(),
+        village: form.village.trim() || null,
+        phone: form.phone.trim(),
+        otherInfo: form.otherInfo.trim() || null
+      };
+      
+      const user = await registerUser(userData);
+      
+      if (user && user.id) {
+        localStorage.setItem("registered", "1");
+        sessionStorage.setItem("justRegistered", "1");
+        setRegistered(true);
+        setShowForm(false);
+        setShowSuccessBanner(true);
+        
+        setForm({ name: "", village: "", phone: "", otherInfo: "" });
+        
+        setTimeout(() => {
+          setShowSuccessBanner(false);
+        }, 5000);
+      } else {
+        throw new Error("Registration failed - invalid response");
+      }
     } catch (err) {
       console.error("Registration error:", err);
       
@@ -159,28 +220,6 @@ export default function Home({ deviceId, registered, setRegistered }) {
     );
   }
 
-  if (checking) {
-    return (
-      <div className="home-page">
-        <div className="hero-section">
-          <div className="hero-background" />
-          <div className="hero-content">
-            <div className="hero-badge">🌾 Premium Quality</div>
-            <h1 className="hero-title">
-              எளிய முறையில் உங்களுக்குத் தேவையான பொருட்களை இங்கே ஆர்டர் செய்யலாம்
-            </h1>
-            <p className="hero-subtitle">Fresh • Fast • Reliable</p>
-          </div>
-        </div>
-        <div className="content-container">
-          <div className="main-card">
-            <p style={{ textAlign: "center", padding: "20px" }}>சரிபார்க்கிறது...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="home-page">
       <div className="hero-section">
@@ -223,9 +262,48 @@ export default function Home({ deviceId, registered, setRegistered }) {
             <div className="success-icon">✓</div>
             <div>
               <strong>வெற்றி!</strong>
-              <p>உங்கள் கர்வியில் பதிவு செய்யப்பட்டுள்ளது. ₹5 தள்ளுபடி வழங்கப்படுகிறது.</p>
+              <p>உங்கள் கருவியில் பதிவு செய்யப்பட்டுள்ளது. ₹5 தள்ளுபடி வழங்கப்படுகிறது.</p>
             </div>
           </div>
+        )}
+
+        {registered && !showSuccessBanner && (
+          <>
+            <div className="quick-features">
+              <div className="quick-feature">
+                <span className="quick-icon">⚡</span>
+                <span className="quick-text">Same Day Delivery</span>
+              </div>
+              <div className="quick-feature">
+                <span className="quick-icon">✨</span>
+                <span className="quick-text">Fresh Daily</span>
+              </div>
+              <div className="quick-feature">
+                <span className="quick-icon">💰</span>
+                <span className="quick-text">Best Price</span>
+              </div>
+            </div>
+
+            <div className="customer-highlight">
+              <div className="highlight-header">
+                <span className="rating-stars">⭐⭐⭐⭐⭐</span>
+                <span className="rating-text">4.9 Rating</span>
+              </div>
+              <p className="highlight-quote">
+                "மிகவும் தரமான அரிசி மாவு. விரைவான டெலிவரி!"
+              </p>
+              <div className="highlight-stats">
+                <div className="stat-mini">
+                  <strong>50+</strong>
+                  <span>Customers</span>
+                </div>
+                <div className="stat-mini">
+                  <strong>200+</strong>
+                  <span>Orders</span>
+                </div>
+              </div>
+            </div>
+          </>
         )}
 
         <div className="main-card">
@@ -242,6 +320,37 @@ export default function Home({ deviceId, registered, setRegistered }) {
             <span className="btn-shine" aria-hidden="true" />
           </button>
         </div>
+
+        {registered && (
+          <div className="navigation-buttons">
+            <button className="nav-btn" onClick={goToMyOrders}>
+              <span className="nav-icon">📦</span>
+              <span>My Orders</span>
+            </button>
+            
+            <button className="nav-btn admin-btn" onClick={goToAdmin}>
+              <span className="nav-icon">⚙️</span>
+              <span>Admin Panel</span>
+            </button>
+          </div>
+        )}
+
+        {registered && !showSuccessBanner && (
+          <div className="trust-indicators">
+            <div className="trust-item">
+              <span className="trust-icon">🔒</span>
+              <span className="trust-text">Secure Payment</span>
+            </div>
+            <div className="trust-item">
+              <span className="trust-icon">✓</span>
+              <span className="trust-text">Quality Assured</span>
+            </div>
+            <div className="trust-item">
+              <span className="trust-icon">🚚</span>
+              <span className="trust-text">Fast Delivery</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Registration Modal */}
@@ -360,7 +469,7 @@ export default function Home({ deviceId, registered, setRegistered }) {
 
               {adminError && <div className="error-message">{adminError}</div>}
 
-           
+             
 
               <div className="form-actions">
                 <button 
