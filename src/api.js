@@ -1,6 +1,6 @@
 
-const BASE_URL = "http://localhost:8080/api";
-// For production, use: const BASE_URL = "https://your-backend-url.up.railway.app/api";
+//const BASE_URL = "http://localhost:8080/api";
+const BASE_URL = "https://rice-flour-backend-production.up.railway.app/api";
 
 export async function registerUser(data) {
   try {
