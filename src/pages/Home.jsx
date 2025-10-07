@@ -24,7 +24,7 @@ export default function Home({ deviceId, registered, setRegistered }) {
 
       try {
         // Check if user is admin
-        const adminCheck = await fetch(`http://localhost:8080/api/admin-auth/verify/${deviceId}`);
+        const adminCheck = await fetch(`https://rice-flour-backend-production.up.railway.app/api/admin-auth/verify/${deviceId}`);
         if (adminCheck.ok) {
           const adminData = await adminCheck.json();
           if (adminData.isAdmin) {

@@ -1,10 +1,6 @@
 
 //const BASE_URL = "http://localhost:8080/api";
-const BASE_URL =
-  process.env.NODE_ENV === "production"
-    ? "https://rice-flour-backend-production.up.railway.app/api"
-    : "http://localhost:8080/api";
-
+const BASE_URL = "https://rice-flour-backend-production.up.railway.app/api";
 
 export async function registerUser(data) {
   try {
