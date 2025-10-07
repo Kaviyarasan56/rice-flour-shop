@@ -280,7 +280,6 @@ export default function Item({ deviceId, registered }) {
     }
   }
 
-<<<<<<< HEAD
   function goToItem() {
     if (navigate) navigate("/item");
     else window.location.hash = "#/item";
@@ -332,7 +331,6 @@ export default function Item({ deviceId, registered }) {
                 <span>பிற தகவல்கள்</span>
                 <span className="btn-arrow">→</span>
               </button>
-=======
   return (
     <div className="item-page">
       {/* Header */}
@@ -408,12 +406,10 @@ export default function Item({ deviceId, registered }) {
               <button className="qty-btn" onClick={decrementQty} type="button">−</button>
               <span className="qty-display">{quantity}</span>
               <button className="qty-btn" onClick={incrementQty} type="button">+</button>
->>>>>>> 13e916a (Update API base URL and tested locally)
             </div>
           </div>
         )}
 
-<<<<<<< HEAD
         {registered && showSuccessBanner && (
           <div className="success-banner animate-in">
             <div className="success-icon">✓</div>
@@ -477,7 +473,6 @@ export default function Item({ deviceId, registered }) {
           <button className="btn-primary pulse-animation" onClick={goToItem}>
             <span>பொருள் பார்க்க</span>
             <span className="btn-shine" aria-hidden />
-=======
           {/* Payment Method Selection */}
           <div className="payment-method-section">
             <label>பணம் செலுத்தும் முறை</label>
@@ -567,7 +562,6 @@ export default function Item({ deviceId, registered }) {
           >
             <span>🛒</span>
             <span>ஆர்டர் செய்</span>
->>>>>>> 13e916a (Update API base URL and tested locally)
           </button>
         </div>
 
@@ -590,7 +584,6 @@ export default function Item({ deviceId, registered }) {
         )}
       </div>
 
-<<<<<<< HEAD
       {showForm && (
         <div className="modal-overlay" onClick={() => setShowForm(false)}>
           <div className="modal-content big-form fancy-form" onClick={(e) => e.stopPropagation()}>
@@ -599,7 +592,6 @@ export default function Item({ deviceId, registered }) {
               <div className="modal-icon">📝</div>
               <h2>பதிவு செய்யவும்</h2>
               <p>உங்கள் தகவல்களை வழங்கினால் தள்ளுபடி வழங்கப்படும்</p>
-=======
       {/* Slot Selection Modal */}
       {showSlotModal && (
         <div className="modal-overlay" onClick={() => setShowSlotModal(false)}>
@@ -617,10 +609,8 @@ export default function Item({ deviceId, registered }) {
                 <strong>மாலை</strong>
                 <span className="slot-time">4 PM - 8 PM</span>
               </button>
->>>>>>> 13e916a (Update API base URL and tested locally)
             </div>
 
-<<<<<<< HEAD
             <form onSubmit={submitRegistration} className="modal-form big-inputs" noValidate>
               <div className="form-group">
                 <label>பெயர் *</label>
@@ -659,7 +649,6 @@ export default function Item({ deviceId, registered }) {
                 </button>
               </div>
             </form>
-=======
       {/* Confirmation Modal */}
       {showConfirmModal && (
         <div className="modal-overlay" onClick={() => !loading && setShowConfirmModal(false)}>
@@ -720,7 +709,6 @@ export default function Item({ deviceId, registered }) {
                 {loading ? 'செயல்படுத்துகிறது...' : 'உறுதிப்படுத்து'}
               </button>
             </div>
->>>>>>> 13e916a (Update API base URL and tested locally)
           </div>
         </div>
       )}
