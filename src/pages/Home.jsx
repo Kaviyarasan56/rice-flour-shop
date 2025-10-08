@@ -24,7 +24,7 @@ export default function Home({ deviceId, registered, setRegistered }) {
 
       try {
         // Check if user is admin
-        const adminCheck = await fetch(`https://rice-flour-backend-production.up.railway.app/api/admin-auth/verify/${deviceId}`);
+        const adminCheck = await fetch(`http://localhost:8080/api/admin-auth/verify/${deviceId}`);
         if (adminCheck.ok) {
           const adminData = await adminCheck.json();
           if (adminData.isAdmin) {
@@ -140,7 +140,7 @@ export default function Home({ deviceId, registered, setRegistered }) {
     setLoading(true);
     
     try {
-      const response = await fetch("https://rice-flour-backend-production.up.railway.app/api/admin-auth/login", {
+      const response = await fetch("http://localhost:8080/api/admin-auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -469,7 +469,11 @@ export default function Home({ deviceId, registered, setRegistered }) {
 
               {adminError && <div className="error-message">{adminError}</div>}
 
-             
+              <div className="admin-credentials-hint">
+                <p><strong>Default Credentials:</strong></p>
+                <p>Username: <code>admin</code></p>
+                <p>Password: <code>admin123</code></p>
+              </div>
 
               <div className="form-actions">
                 <button 
